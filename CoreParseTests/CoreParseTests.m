@@ -919,4 +919,41 @@
     STAssertNotNil(err, @"No error returned for creating a grammar with invalid BNF");
 }
 
+- (void)testArchiveGrammar
+{
+    NSString *testGrammar =
+    @"CSSSelectorGroup                ::= firstSelector@<CSSSelectors> otherSelectors@(<Comma> <CSSSelectors>)*;"
+    @"CSSSelectors                    ::= firstSequence@<CSSSelectorSequence> otherSequences@(<CSSCombinator> <CSSSelectorSequence>)*;"
+    @"CSSSelectorSequence             ::= (universal@<CSSUniversalSelector> | type@<CSSTypeSelector>) selectorsWithType@(<CSSClassSelector> | <CSSIDSelector> | <CSSSelectorAttribute> | <CSSPseudoClass>)* | selectorsWithoutType@(<CSSClassSelector> | <CSSIDSelector> | <CSSSelectorAttribute> | <CSSPseudoClass>)+;"
+    @"CSSSelectorAttribute            ::= '[' 'Whitespace'* attrName@'Identifier' (op@<CSSSelectorAttributeOperator> attrValue@<QuotedString>)? ']';"
+    @"CSSSelectorAttributeOperator    ::= <Equal> | <Includes> | <Dashmatch>;"
+    @"CSSPseudoClass                  ::= ':' ':'? (className@'Identifier');"
+    @"CSSCombinator                   ::= <Greater> | <Plus> | <Tilde> | 'Whitespace'+;"
+    @"CSSClassSelector                ::= '.' className@'Identifier';"
+    @"CSSIDSelector                   ::= '#' idName@'Identifier';"
+    @"CSSTypeSelector                 ::= typeName@'Identifier';"
+    @"CSSUniversalSelector            ::= '*';"
+    @"CSSPseudoExpression             ::= (( '+' | '-' | 'Number' 'Identifier' | 'Number' | 'Identifier' ) 'Whitespace'* )+;"
+    @"QuotedString                    ::= 'String';"
+    @"Dashmatch                       ::= '|=';"
+    @"Includes                        ::= '~=';"
+    @"Equal                           ::= '=';"
+    @"Comma                           ::= ',';"
+    @"Plus                            ::= '+';"
+    @"Greater                         ::= '>';"
+    @"Tilde                           ::= '~';";
+    
+    NSError* error;
+    CPGrammar *grammar1 = [CPGrammar grammarWithStart:@"CSSSelectorGroup" backusNaurForm:testGrammar error:&error];
+
+    NSMutableData* data = [NSMutableData data];
+    NSKeyedArchiver* archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:data];
+    [archiver encodeObject:grammar1 forKey:@"g"];
+    [archiver finishEncoding];
+    
+    NSKeyedUnarchiver* unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
+    CPGrammar* grammar2 = [unarchiver decodeObjectForKey:@"g"];
+    STAssertEqualObjects(grammar1, grammar2, @"Archive and unarchived grammar should be the same.");
+}
+
 @end
